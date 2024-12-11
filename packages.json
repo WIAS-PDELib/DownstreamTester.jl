@@ -1,0 +1,19 @@
+{
+"packages": [
+{	
+  "name": "ExtendableSparse",
+  "url": "https://github.com/WIAS-PDELib/ExtendableSparse.jl.git",
+  "nightly": true
+},
+{
+  "name": "VoronoiFVM",
+  "url": "https://github.com/WIAS-PDELib/VoronoiFVM.jl.git",
+  "nightly": false
+},
+{
+  "name": "ExtendableFEM",
+  "url": "https://github.com/WIAS-PDELib/ExtendableFEM.jl.git",
+  "nightly": false
+}
+]
+}

@@ -3,9 +3,12 @@ function nightly_testrun(pkgdict::Dict)
     name=pkgdict["name"]
     latest = pkgdict["githashes"][begin]
     logname = name*"_nightly_"*latest*"_v"*string(VERSION)*".xml"
-    TestReports.test(name;logfilename=logname)
+    try
+        TestReports.test(name;logfilename=logname)
+    catch
+    end
     merge!(pkgdict,Dict("nightlylog"=>logname))
-    Pkg.free(name) 
+    Pkg.rm(name) 
     return nothing
 end
 

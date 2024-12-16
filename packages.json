@@ -1,9 +1,14 @@
 {
 "packages": [
 {	
+  "name": "ExtendableGrids",
+  "url": "https://github.com/WIAS-PDELib/ExtendableGrids.jl.git",
+  "nightly": true
+},
+{	
   "name": "ExtendableSparse",
   "url": "https://github.com/WIAS-PDELib/ExtendableSparse.jl.git",
-  "nightly": true
+  "nightly": false
 },
 {
   "name": "VoronoiFVM",

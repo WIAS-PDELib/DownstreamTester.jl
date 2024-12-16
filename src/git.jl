@@ -1,7 +1,9 @@
-function clonerepo!(pkgdict)
+function clonerepo!(pkgdict,do_clone=true)
 	url = pkgdict["url"]
 	path = "../testdeps/"*pkgdict["name"]
-	run(`git clone $url --single-branch $path`)
+    if do_clone
+	    run(`git clone $url --single-branch $path`)
+    end
     # Only get hashes of all commits on HEAD
     gitlog = Cmd(`git log --format=format:"%H"`;dir=path)
     # Exec and split into individual lines
@@ -10,7 +12,7 @@ function clonerepo!(pkgdict)
     return nothing
 end
 
-function process_git(pkgdict)
-	clonerepo!(pkgdict)
+function process_git(pkgdict,do_clone::Bool)
+	clonerepo!(pkgdict,do_clone)
     return nothing
 end

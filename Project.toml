@@ -9,6 +9,7 @@ ExtendableSparse = "95c220a8-a1cf-11e9-0c77-dbfce5f500b3"
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 LightXML = "9c8b4983-aa76-5018-a973-4c85ecc9e179"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestReports = "dcd651b4-b50a-5b6b-8f22-87e9f253a252"
 
 [compat]
@@ -17,4 +18,5 @@ ExtendableSparse = "1.6.0"
 JSON = "0.21.4"
 LightXML = "0.9.1"
 Pkg = "1.11.0"
+Test = "1.11.0"
 TestReports = "1.2.0"

@@ -3,6 +3,7 @@ using Pkg
 using TestReports
 using JSON
 using Dates
+using GitHub
 
 
 function yesterday(date::Date)
@@ -27,7 +28,6 @@ function main()
             process_git(pack, do_clone)
             commithash = pack["githashes"][begin]
             nightly(pack)
-
         end
     end
     return nothing

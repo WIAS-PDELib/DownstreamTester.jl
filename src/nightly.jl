@@ -48,6 +48,49 @@ function diff_nightly(prev::NightlyInfo, curr::NightlyInfo)::NightlyDiff
     return NightlyDiff(new, same, fixed)
 end
 
+function nightly_open_issue(pkgdict::Dict, new::Set{FailureInfo}, prev::NightlyInfo)
+    latest = pkgdict["githashes"][1]
+    title = "DownstreamTester nightly failure " * latest[1:6]
+
+    commiturl = "https://github.com/" * pkgdict["repo"] * "/commit/"
+    compurl = "https://github.com/" * pkgdict["repo"] * "/compare/"
+    body = "[Start automated DownstreamTester.jl nightly report]\n\n"
+    body *= "Dear all,\n\n"
+    body *= "this is DownstreamTester.jl reporting a new nightly regression between\n\n"
+    body *= "* new revision: [`" * latest[1:6] * "`](" * commiturl * latest * ") with Julia v" * string(VERSION) * "\n"
+    body *= "* old revision: [`" * prev.commithash[1:6] * "`](" * commiturl * prev.commithash * ") with Julia v" * prev.nightlyversion * "\n"
+    if prev.commithash != latest
+        body *= "* compare revisions: [`diff`](" * compurl * prev.commithash * "..." * latest * ")\n"
+    end
+    body *= "\nFailing tests: \n\n"
+    for failure in new
+        body *= "* `" * failure.suite * "/`\n`" * failure.casename * "`\n"
+        body *= "```\n"
+        body *= failure.message
+        body *= "```\n"
+    end
+    body *= "\n"
+    body *= "Notes:\n\n"
+    body *= "* This issue will automatically be closed once the failing tests"
+    body *= " identified in this issue are passing again.\n\n"
+
+    body *= "[End automated DownstreamTester.jl nightly report]"
+    myauth = GitHub.authenticate(ENV["ISSUETOKEN"])
+    issuecontent = Dict(
+        "title" => title,
+        "body" => body,
+        "labels" => ["nightly"]
+    )
+    issue = GitHub.create_issue(
+        "jpthiele/issuetest"
+        ;
+        params = issuecontent,
+        auth = myauth
+    )
+    @show issue
+    return nothing
+end
+
 function nightly(pkgdict::Dict)
     prev = parse_previous_nightly(pkgdict)
     latest = pkgdict["githashes"][1]
@@ -63,6 +106,7 @@ function nightly(pkgdict::Dict)
         #TODO: take action
         if !isempty(diff.new)
             @info "New failures since last run, opening issue."
+            nightly_open_issue(pkgdict, diff.new, prev)
         end
         if !isempty(diff.fixed)
             @info "Fixed failures since last run, " *
@@ -74,7 +118,6 @@ function nightly(pkgdict::Dict)
     jsonfile = open(pkgdict["name"] * "_nightly_" * string(today()) * ".json", "w")
     JSON.print(jsonfile, info, 2)
     close(jsonfile)
-
 
     return nothing
 end

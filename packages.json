@@ -2,22 +2,22 @@
 "packages": [
 {	
   "name": "ExtendableGrids",
-  "url": "https://github.com/WIAS-PDELib/ExtendableGrids.jl.git",
+  "repo": "WIAS-PDELib/ExtendableGrids.jl",
   "nightly": true
 },
 {	
   "name": "ExtendableSparse",
-  "url": "https://github.com/WIAS-PDELib/ExtendableSparse.jl.git",
+  "repo": "WIAS-PDELib/ExtendableSparse.jl",
   "nightly": false
 },
 {
   "name": "VoronoiFVM",
-  "url": "https://github.com/WIAS-PDELib/VoronoiFVM.jl.git",
+  "repo": "WIAS-PDELib/VoronoiFVM.jl",
   "nightly": false
 },
 {
   "name": "ExtendableFEM",
-  "url": "https://github.com/WIAS-PDELib/ExtendableFEM.jl.git",
+  "repo": "WIAS-PDELib/ExtendableFEM.jl",
   "nightly": false
 }
 ]

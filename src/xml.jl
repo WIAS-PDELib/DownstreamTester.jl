@@ -39,8 +39,8 @@ function process_testsuite(testsuite::XMLElement)::Set{FailureInfo}
 
     for case in child_elements(testsuite)
         newfailures = process_testcase(case)
-        for entry ∈ newfailures
-            push!(failures,entry)
+        for entry in newfailures
+            push!(failures, entry)
         end
     end
 
@@ -58,7 +58,7 @@ function process_log(logfile::String)::Set{FailureInfo}
     # Find failing child node(s)
     for testsuite in child_elements(logroot)
         newfailures = process_testsuite(testsuite)
-        for entry ∈ newfailures
+        for entry in newfailures
             push!(failures, entry)
         end
     end

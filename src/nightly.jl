@@ -6,12 +6,12 @@ end
 
 function nightly_testrun(pkgdict::Dict)
     latest = pkgdict["githashes"][begin]
-    ver = string(VERSION) 
+    ver = string(VERSION)
     name = pkgdict["name"]
     logname = name * "_nightly_" * latest * "_v" * ver * ".xml"
-    Pkg.add(path=pkgdict["path"])
+    Pkg.add(path = pkgdict["path"])
     try
-        TestReports.test(name;logfilename=logname)
+        TestReports.test(name; logfilename = logname)
     catch
     end
     merge!(pkgdict, Dict("nightlylog" => logname))
@@ -29,23 +29,23 @@ function process_nightlylog(pkgdict::Dict)::NightlyInfo
     )
 end
 
-function diff_nightly(prev::NightlyInfo,curr::NightlyInfo)::NightlyDiff
+function diff_nightly(prev::NightlyInfo, curr::NightlyInfo)::NightlyDiff
     prevfails = Set(prev.failures)
     currfails = Set(curr.failures)
-    same = intersect(prevfails,currfails)
+    same = intersect(prevfails, currfails)
     new = Set{FailureInfo}()
     fixed = Set{FailureInfo}()
-    for prevfail ∈ prevfails
+    for prevfail in prevfails
         if prevfail ∉ currfails
-            push!(fixed,prevfail)
+            push!(fixed, prevfail)
         end
     end
-    for currfail ∈ currfails
+    for currfail in currfails
         if currfail ∉ prevfails
-            push!(new,currfail)
+            push!(new, currfail)
         end
     end
-    return NightlyDiff(new,same,fixed)
+    return NightlyDiff(new, same, fixed)
 end
 
 function nightly(pkgdict::Dict)
@@ -58,24 +58,22 @@ function nightly(pkgdict::Dict)
     else
         nightly_testrun(pkgdict)
         info = process_nightlylog(pkgdict)
-        diff = diff_nightly(prev,info)
+        diff = diff_nightly(prev, info)
         @show diff
-        #TODO: take action 
+        #TODO: take action
         if !isempty(diff.new)
             @info "New failures since last run, opening issue."
         end
         if !isempty(diff.fixed)
-            @info "Fixed failures since last run, "*
-                  "check can  if issue can be closed."
+            @info "Fixed failures since last run, " *
+                "check can  if issue can be closed."
         end
     end
-    
+
     ## Print results to todays file
     jsonfile = open(pkgdict["name"] * "_nightly_" * string(today()) * ".json", "w")
     JSON.print(jsonfile, info, 2)
     close(jsonfile)
-
-
 
 
     return nothing

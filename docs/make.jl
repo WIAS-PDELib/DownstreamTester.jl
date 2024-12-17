@@ -1,4 +1,4 @@
-push!(LOAD_PATH,"../src")
+push!(LOAD_PATH, "../src")
 using Documenter, DownstreamTester, DocumenterMermaid
 
-makedocs(sitename="DownstreamTester.jl")
+makedocs(sitename = "DownstreamTester.jl")

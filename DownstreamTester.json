@@ -1,0 +1,21 @@
+{
+"repo":{
+    "name": "ExtendableGrids",
+    "source": "WIAS-PDELib/ExtendableGrids.jl",
+    "reporting": "jpthiele/issuetest"
+},
+"downstream": [
+{	
+  "name": "ExtendableSparse",
+  "source": "WIAS-PDELib/ExtendableSparse.jl"
+},
+{
+  "name": "VoronoiFVM",
+  "source": "WIAS-PDELib/VoronoiFVM.jl"
+},
+{
+  "name": "ExtendableFEM",
+  "source": "WIAS-PDELib/ExtendableFEM.jl"
+}
+]
+}

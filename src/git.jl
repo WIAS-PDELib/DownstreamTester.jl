@@ -1,5 +1,5 @@
 function clonerepo!(pkgdict, do_clone = true)
-    url = "https://github.com/" * pkgdict["repo"] * ".git"
+    url = "https://github.com/" * pkgdict["source"] * ".git"
     path = "../testdeps/" * pkgdict["name"]
     if do_clone
         run(`git clone $url --single-branch $path`)

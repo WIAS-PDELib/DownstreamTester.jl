@@ -21,15 +21,18 @@ include("git.jl")
 
 
 function main()
-    packageinfo = JSON.parsefile("packages.json")
-    for pack in packageinfo["packages"]
-        if pack["nightly"]
-            do_clone = false #switch to false after first clone for testing
-            process_git(pack, do_clone)
-            commithash = pack["githashes"][begin]
-            nightly(pack)
-        end
+    info = JSON.parsefile("DownstreamTester.json")
+    repo = info["repo"]
+    if !haskey(repo,"reporting")
+        repo["reporting"]=repo["source"]
     end
+    downstream = info["downstream"]
+
+    # Starting nightly test for repo
+    do_clone = false #switch to false after first clone for testing
+    process_git(repo, do_clone)
+    commithash = repo["githashes"][begin]
+    nightly(repo)
     return nothing
 end
 

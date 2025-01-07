@@ -7,7 +7,7 @@ end
 function parse_previous_nightly(pkgdict::Dict)::NightlyInfo
     filename = pkgdict["name"] * "_nightly_" * string(yesterday()) * ".json"
     if !isfile(filename)
-        return NightlyInfo("0000000000000","v0.0",Set{FailureInfo}())
+        return NightlyInfo("","",Set{FailureInfo}())
     end
     file = open(filename)
     info = parse(file, NightlyInfo)
@@ -25,8 +25,8 @@ function nightly_testrun(pkgdict::Dict)
         TestReports.test(name; logfilename = logname)
     catch
     end
-    merge!(pkgdict, Dict("nightlylog" => logname))
     Pkg.rm(name)
+    merge!(pkgdict, Dict("nightlylog" => logname))
     return nothing
 end
 
@@ -63,15 +63,17 @@ function nightly_open_issue(pkgdict::Dict, new::Set{FailureInfo}, prev::NightlyI
     latest = pkgdict["githashes"][1]
     title = "DownstreamTester nightly failure " * latest[1:6]
 
-    commiturl = "https://github.com/" * pkgdict["repo"] * "/commit/"
-    compurl = "https://github.com/" * pkgdict["repo"] * "/compare/"
+    commiturl = "https://github.com/" * pkgdict["source"] * "/commit/"
+    compurl = "https://github.com/" * pkgdict["source"] * "/compare/"
     body = "[Start automated DownstreamTester.jl nightly report]\n\n"
     body *= "Dear all,\n\n"
     body *= "this is DownstreamTester.jl reporting a new nightly regression between\n\n"
     body *= "* new revision: [`" * latest[1:6] * "`](" * commiturl * latest * ") with Julia v" * string(VERSION) * "\n"
-    body *= "* old revision: [`" * prev.commithash[1:6] * "`](" * commiturl * prev.commithash * ") with Julia v" * prev.nightlyversion * "\n"
-    if prev.commithash != latest
-        body *= "* compare revisions: [`diff`](" * compurl * prev.commithash * "..." * latest * ")\n"
+    if prev.commithash!="" && prev.nightlyversion!=""
+        body *= "* old revision: [`" * prev.commithash[1:6] * "`](" * commiturl * prev.commithash * ") with Julia v" * prev.nightlyversion * "\n"
+        if prev.commithash != latest
+            body *= "* compare revisions: [`diff`](" * compurl * prev.commithash * "..." * latest * ")\n"
+        end
     end
     body *= "\nFailing tests: \n\n"
     for failure in new
@@ -93,7 +95,7 @@ function nightly_open_issue(pkgdict::Dict, new::Set{FailureInfo}, prev::NightlyI
         "labels" => ["nightly"]
     )
     issue = GitHub.create_issue(
-        "jpthiele/issuetest"
+        pkgdict["reporting"]
         ;
         params = issuecontent,
         auth = myauth

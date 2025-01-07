@@ -4,6 +4,17 @@ struct NightlyDiff
     fixed::Set{FailureInfo}
 end
 
+function parse_previous_nightly(pkgdict::Dict)::NightlyInfo
+    filename = pkgdict["name"] * "_nightly_" * string(yesterday()) * ".json"
+    if !isfile(filename)
+        return NightlyInfo("0000000000000","v0.0",Set{FailureInfo}())
+    end
+    file = open(filename)
+    info = parse(file, NightlyInfo)
+    close(file)
+    return info
+end
+
 function nightly_testrun(pkgdict::Dict)
     latest = pkgdict["githashes"][begin]
     ver = string(VERSION)

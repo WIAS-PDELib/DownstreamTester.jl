@@ -59,11 +59,3 @@ function Base.:(==)(left::NightlyInfo, right::NightlyInfo)
     end
     return true
 end
-
-function parse_previous_nightly(pkgdict::Dict)
-    filename = pkgdict["name"] * "_nightly_" * string(yesterday()) * ".json"
-    file = open(filename)
-    info = parse(file, NightlyInfo)
-    close(file)
-    return info
-end

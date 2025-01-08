@@ -1,38 +1,45 @@
-struct NightlyDiff
-    new::Set{FailureInfo}
-    same::Set{FailureInfo}
-    fixed::Set{FailureInfo}
-end
+# SPDX-License-Identifier: MIT
 
-function parse_previous_nightly(pkgdict::Dict)::NightlyInfo
-    filename = pkgdict["name"] * "_nightly_" * string(yesterday()) * ".json"
-    if !isfile(filename)
-        return NightlyInfo("","",Set{FailureInfo}())
+"""
+    parse_previous_nightly(pkgname::String)::NightlyInfo
+
+Parse the JSON file of yesterdays log
+"""
+function parse_previous_nightly(logfile::String)::NightlyInfo
+    if !isfile(logfile)
+        return NightlyInfo("", "", Set{FailureInfo}())
     end
-    file = open(filename)
+    file = open(logfile)
     info = parse(file, NightlyInfo)
     close(file)
     return info
 end
 
-function nightly_testrun(pkgdict::Dict)
-    latest = pkgdict["githashes"][begin]
-    ver = string(VERSION)
-    name = pkgdict["name"]
-    logname = name * "_nightly_" * latest * "_v" * ver * ".xml"
-    Pkg.add(path = pkgdict["path"])
+"""
+    nightly_testrun(name::String, path::String, logfile::String)
+
+Perform the actual testrun on the cloned git repository in path
+and write the results into the XML logfile
+"""
+function nightly_testrun(name::String, path::String, logfile::String)
+    Pkg.add(path = path)
     try
-        TestReports.test(name; logfilename = logname)
+        TestReports.test(name; logfilename = logfile)
     catch
     end
     Pkg.rm(name)
-    merge!(pkgdict, Dict("nightlylog" => logname))
     return nothing
 end
 
-function process_nightlylog(pkgdict::Dict)::NightlyInfo
-    latest = pkgdict["githashes"][begin]
-    failures = process_log(pkgdict["nightlylog"])
+
+"""
+    process_nightlylog(logfile::String, latest::String)::NightlyInfo
+
+Parse a given nightly run XML log for test failures 
+and return information about that run
+"""
+function process_nightlylog(logfile::String, latest::String)::NightlyInfo
+    failures = process_log(logfile)
     return NightlyInfo(
         latest,
         string(VERSION),
@@ -40,97 +47,91 @@ function process_nightlylog(pkgdict::Dict)::NightlyInfo
     )
 end
 
-function diff_nightly(prev::NightlyInfo, curr::NightlyInfo)::NightlyDiff
-    prevfails = Set(prev.failures)
-    currfails = Set(curr.failures)
-    same = intersect(prevfails, currfails)
-    new = Set{FailureInfo}()
-    fixed = Set{FailureInfo}()
-    for prevfail in prevfails
-        if prevfail ∉ currfails
-            push!(fixed, prevfail)
-        end
-    end
-    for currfail in currfails
-        if currfail ∉ prevfails
-            push!(new, currfail)
-        end
-    end
-    return NightlyDiff(new, same, fixed)
-end
 
-function nightly_open_issue(pkgdict::Dict, new::Set{FailureInfo}, prev::NightlyInfo)
-    latest = pkgdict["githashes"][1]
-    title = "DownstreamTester nightly failure " * latest[1:6]
+"""
+    nightly(configfile::String="DownstreamTester.json")
 
-    commiturl = "https://github.com/" * pkgdict["source"] * "/commit/"
-    compurl = "https://github.com/" * pkgdict["source"] * "/compare/"
-    body = "[Start automated DownstreamTester.jl nightly report]\n\n"
-    body *= "Dear all,\n\n"
-    body *= "this is DownstreamTester.jl reporting a new nightly regression between\n\n"
-    body *= "* new revision: [`" * latest[1:6] * "`](" * commiturl * latest * ") with Julia v" * string(VERSION) * "\n"
-    if prev.commithash!="" && prev.nightlyversion!=""
-        body *= "* old revision: [`" * prev.commithash[1:6] * "`](" * commiturl * prev.commithash * ") with Julia v" * prev.nightlyversion * "\n"
-        if prev.commithash != latest
-            body *= "* compare revisions: [`diff`](" * compurl * prev.commithash * "..." * latest * ")\n"
-        end
+Perform a nightly test on the Julia Package given in the config file.
+This function is aimed to be run daily in a scheduled GitHub action 
+to find and report on new test failures with the nightly version of Julia.
+When called it will clone the HEAD revision of the package repository 
+provided in the config and run the full testsuite on it. 
+If new failing tests are found it will open an issue on the package repository.
+If tests are passing it will report on the related issue and
+close it if all reported tests therein pass.
+"""
+function nightly(configfile::String = "DownstreamTester.json")
+    config = JSON.parsefile(configfile)
+    nightlyconfig = config["repo"]
+    # If reporting is not set, DownstreamTester will try to open an issue in
+    # the source repo of the package to test
+    url = nightlyconfig["url"]
+    if !haskey(nightlyconfig, "reporting")
+        nightlyconfig["reporting"] = split(url, "github.com/")[end]
     end
-    body *= "\nFailing tests: \n\n"
-    for failure in new
-        body *= "* `" * failure.suite * "/`\n`" * failure.casename * "`\n"
-        body *= "```\n"
-        body *= failure.message
-        body *= "```\n"
-    end
-    body *= "\n"
-    body *= "Notes:\n\n"
-    body *= "* This issue will automatically be closed once the failing tests"
-    body *= " identified in this issue are passing again.\n\n"
-
-    body *= "[End automated DownstreamTester.jl nightly report]"
-    myauth = GitHub.authenticate(ENV["ISSUETOKEN"])
-    issuecontent = Dict(
-        "title" => title,
-        "body" => body,
-        "labels" => ["nightly"]
-    )
-    issue = GitHub.create_issue(
-        pkgdict["reporting"]
-        ;
-        params = issuecontent,
-        auth = myauth
-    )
-    @show issue
-    return nothing
-end
-
-function nightly(pkgdict::Dict)
-    prev = parse_previous_nightly(pkgdict)
-    latest = pkgdict["githashes"][1]
+    do_clone = false #switch to false after first clone [for testing only]
+    process_git!(nightlyconfig, do_clone)
+    logpath = "../testdeps/logs/"
+    fetch_logs(url, logpath)
+    latest = string(nightlyconfig["githashes"][1])
     ver = string(VERSION)
+    name = nightlyconfig["name"]
+    @info "Starting DownstreamTester.jl for " * name * "(" * latest[1:6] * ") on Julia v" * ver
+    previous_logfilename = logpath * name * "_nightly_" * string(yesterday()) * ".json"
+    prev = parse_previous_nightly(previous_logfilename)
     if prev.commithash == latest && prev.nightlyversion == ver
-        @info "Test for " * pkgdict["name"] * "(" * latest * ") already run on Julia v" * ver
+        @info "Tests for this configuration already run yesterday, done."
         info = prev
     else
-        nightly_testrun(pkgdict)
-        info = process_nightlylog(pkgdict)
-        diff = diff_nightly(prev, info)
-        @show diff
-        #TODO: take action
+        xmlfile = logpath * name * "_nightly_" * latest * "_v" * ver * ".xml"
+        nightly_testrun(name, nightlyconfig["path"], xmlfile)
+        info = process_nightlylog(xmlfile, latest)
+        diff = diff_failures(prev.failures, info.failures)
+
+        issues = parse_issues(logpath * name * "_nightly_issues.json")
+        @show issues
         if !isempty(diff.new)
             @info "New failures since last run, opening issue."
-            nightly_open_issue(pkgdict, diff.new, prev)
+
+            title = "DownstreamTester nightly failure " * latest[1:6]
+            preamble = "Dear all,\n\n"
+            preamble *= "this is DownstreamTester.jl reporting a new *nightly* regression \n\n"
+            preamble *= "* new revision: " * revision_link(url, latest) * " with Julia v" * ver * "\n"
+            if prev.commithash != "" && prev.nightlyversion != ""
+                preamble *= "* old revision: " * revision_link(url, prev.commithash) * " with Julia v" * prev.nightlyversion * "\n"
+                if prev.commithash != latest
+                    preamble *= "* compare revisions: [`diff`](" * url * "/compare/" * prev.commithash * "..." * latest * ")\n"
+                end
+            end
+            issueinfo = open_issue(nightlyconfig["reporting"], title, preamble, ["nightly"], diff.new)
+            push!(issues, issueinfo)
         end
+        @show issues
         if !isempty(diff.fixed)
             @info "Fixed failures since last run, " *
                 "check can  if issue can be closed."
+
+            #Nightly specific start of comment text
+            preamble = "The following tests are passing again "
+            preamble *= "in revision " * revision_link(url, latest)
+            preamble *= " with Julia v" * string(VERSION) * " :tada:\n\n"
+            mark_as_fixed!(issues, diff.fixed, preamble)
         end
+        @show issues
+        #Overwrite issue file
+        issuefilename = name * "_nightly_issues.json"
+        issuefile = open(logpath * issuefilename, "w")
+        JSON.print(issuefile, issues, 2)
+        close(issuefile)
+        git_add_file(issuefilename,logpath)
     end
 
     ## Print results to todays file
-    jsonfile = open(pkgdict["name"] * "_nightly_" * string(today()) * ".json", "w")
+    jsonfilename = name * "_nightly_" * string(today()) * ".json"
+    jsonfile = open(logpath * jsonfilename, "w")
     JSON.print(jsonfile, info, 2)
     close(jsonfile)
-
+    git_add_file(jsonfilename,logpath)
+    git_commit("Add logs for "*string(today()),logpath)
     return nothing
 end

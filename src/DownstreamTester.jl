@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+
 module DownstreamTester
 using Pkg
 using TestReports
@@ -6,35 +8,29 @@ using Dates
 using GitHub
 
 
-function yesterday(date::Date)
+"""
+    previous_day(date::Date)
+
+Get the date of the day before the given date.
+"""
+function previous_day(date::Date)
     return date - Dates.Day(1)
 end
 
+"""
+    yesterday()
+
+Get the date of yesterday
+"""
 function yesterday()
-    return yesterday(today())
+    return previous_day(today())
 end
 
 include("infos.jl")
 include("xml.jl")
-include("nightly.jl")
 include("git.jl")
+include("github.jl")
+include("nightly.jl")
 
-
-function main()
-    info = JSON.parsefile("DownstreamTester.json")
-    repo = info["repo"]
-    if !haskey(repo,"reporting")
-        repo["reporting"]=repo["source"]
-    end
-    downstream = info["downstream"]
-
-    # Starting nightly test for repo
-    do_clone = false #switch to false after first clone for testing
-    process_git(repo, do_clone)
-    commithash = repo["githashes"][begin]
-    nightly(repo)
-    return nothing
-end
-
-export main
+export nightly
 end # module DownstreamTester

@@ -17,24 +17,12 @@ end
 
 Add the file to the repository under path
 """
-function git_add_file(filename,path)
-    run(Cmd(`git add $filename`;dir=path))
+function git_add_file(filename, path)
+    return run(Cmd(`git add $filename`; dir = path))
 end
 
-function git_commit(message,path)
-    run(Cmd(`git commit -m "$message"`;dir=path))
-end
-
-"""
-    clonerepo(url, path)
-
-Clone the newest (depth) commits of the given branch of 
-the git repository at url into path
-
-"""
-function clonerepo(url, path, branch, depth = 1)
-    run(`git clone $url --branch=$branch --depth=$depth $path`)
-    return nothing
+function git_commit(message, path)
+    return run(Cmd(`git commit -m "$message"`; dir = path))
 end
 
 """
@@ -68,9 +56,4 @@ function process_git!(pkgconfig, do_clone::Bool = true)
     # Note: githashes is truncated for now as more information is not yet needed
     merge!(pkgconfig, Dict("path" => path, "githashes" => githashes))
     return nothing
-end
-
-
-function fetch_logs(url::String, logpath::String)
-    return clonerepo(url * ".git", logpath, "downstreamtesterlogs")
 end

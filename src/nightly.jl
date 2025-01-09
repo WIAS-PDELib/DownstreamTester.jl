@@ -63,20 +63,21 @@ close it if all reported tests therein pass.
 function nightly(configfile::String = "DownstreamTester.json")
     config = JSON.parsefile(configfile)
     nightlyconfig = config["repo"]
+    latest = string(nightlyconfig["githashes"][1])
+    ver = string(VERSION)
+    name = nightlyconfig["name"]
+    @info "Starting DownstreamTester.jl for " * name * "(" * latest[1:6] * ") on Julia v" * ver
     # If reporting is not set, DownstreamTester will try to open an issue in
     # the source repo of the package to test
     url = nightlyconfig["url"]
     if !haskey(nightlyconfig, "reporting")
         nightlyconfig["reporting"] = split(url, "github.com/")[end]
     end
-    do_clone = false #switch to false after first clone [for testing only]
-    process_git!(nightlyconfig, do_clone)
+    process_git!(nightlyconfig)
     logpath = "../testdeps/logs/"
-    fetch_logs(url, logpath)
-    latest = string(nightlyconfig["githashes"][1])
-    ver = string(VERSION)
-    name = nightlyconfig["name"]
-    @info "Starting DownstreamTester.jl for " * name * "(" * latest[1:6] * ") on Julia v" * ver
+    if !isdir(logpath)
+        @error "Logfile folder not found! Please review installation instructions for the CI file."
+    end
     previous_logfilename = logpath * name * "_nightly_" * string(yesterday()) * ".json"
     prev = parse_previous_nightly(previous_logfilename)
     if prev.commithash == latest && prev.nightlyversion == ver
@@ -123,7 +124,7 @@ function nightly(configfile::String = "DownstreamTester.json")
         issuefile = open(logpath * issuefilename, "w")
         JSON.print(issuefile, issues, 2)
         close(issuefile)
-        git_add_file(issuefilename,logpath)
+        git_add_file(issuefilename, logpath)
     end
 
     ## Print results to todays file
@@ -131,7 +132,7 @@ function nightly(configfile::String = "DownstreamTester.json")
     jsonfile = open(logpath * jsonfilename, "w")
     JSON.print(jsonfile, info, 2)
     close(jsonfile)
-    git_add_file(jsonfilename,logpath)
-    git_commit("Add logs for "*string(today()),logpath)
+    git_add_file(jsonfilename, logpath)
+    git_commit("Add logs for " * string(today()), logpath)
     return nothing
 end

@@ -63,17 +63,14 @@ close it if all reported tests therein pass.
 function nightly(configfile::String = "DownstreamTester.json")
     config = JSON.parsefile(configfile)
     nightlyconfig = config["repo"]
+    process_git!(nightlyconfig)
     latest = string(nightlyconfig["githashes"][1])
     ver = string(VERSION)
     name = nightlyconfig["name"]
-    @info "Starting DownstreamTester.jl for " * name * "(" * latest[1:6] * ") on Julia v" * ver
-    # If reporting is not set, DownstreamTester will try to open an issue in
-    # the source repo of the package to test
     url = nightlyconfig["url"]
-    if !haskey(nightlyconfig, "reporting")
-        nightlyconfig["reporting"] = split(url, "github.com/")[end]
-    end
-    process_git!(nightlyconfig)
+
+    @info "Starting DownstreamTester.jl for " * name * "(" * latest[1:6] * ") on Julia v" * ver
+
     logpath = "../testdeps/logs/"
     if !isdir(logpath)
         @error "Logfile folder not found! Please review installation instructions for the CI file."
@@ -84,6 +81,11 @@ function nightly(configfile::String = "DownstreamTester.json")
         @info "Tests for this configuration already run yesterday, done."
         info = prev
     else
+        # If reporting is not set, DownstreamTester will try to open an issue in
+        # the source repo of the package to test
+        if !haskey(nightlyconfig, "reporting")
+            nightlyconfig["reporting"] = split(url, "github.com/")[end]
+        end
         xmlfile = logpath * name * "_nightly_" * latest * "_v" * ver * ".xml"
         nightly_testrun(name, nightlyconfig["path"], xmlfile)
         info = process_nightlylog(xmlfile, latest)

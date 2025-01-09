@@ -50,7 +50,7 @@ add information about the local path and hashes to the Dict of the package
 function process_git!(pkgconfig, do_clone::Bool = true)
     path = "../testdeps/" * pkgconfig["name"]
     if do_clone
-        clonerepo(pkgconfig["source"] * ".git", path)
+        clonerepo(pkgconfig["url"] * ".git", path)
     end
     githashes = get_git_hashes!(path)
     # Note: githashes is truncated for now as more information is not yet needed

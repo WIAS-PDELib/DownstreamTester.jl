@@ -92,7 +92,7 @@ function nightly(configfile::String = "DownstreamTester.json")
         diff = diff_failures(prev.failures, info.failures)
 
         issues = parse_issues(logpath * name * "_nightly_issues.json")
-        @show issues
+        
         if !isempty(diff.new)
             @info "New failures since last run, opening issue."
 
@@ -109,7 +109,7 @@ function nightly(configfile::String = "DownstreamTester.json")
             issueinfo = open_issue(nightlyconfig["reporting"], title, preamble, ["nightly"], diff.new)
             push!(issues, issueinfo)
         end
-        @show issues
+        
         if !isempty(diff.fixed)
             @info "Fixed failures since last run, " *
                 "check can  if issue can be closed."
@@ -120,7 +120,7 @@ function nightly(configfile::String = "DownstreamTester.json")
             preamble *= " with Julia v" * string(VERSION) * " :tada:\n\n"
             mark_as_fixed!(issues, diff.fixed, preamble)
         end
-        @show issues
+        
         #Overwrite issue file
         issuefilename = name * "_nightly_issues.json"
         issuefile = open(logpath * issuefilename, "w")

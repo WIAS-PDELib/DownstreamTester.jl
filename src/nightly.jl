@@ -21,10 +21,10 @@ end
 Perform the actual testrun on the cloned git repository in path
 and write the results into the XML logfile
 """
-function nightly_testrun(name::String, path::String, logfile::String)
-    Pkg.add(path = path)
+function nightly_testrun(name::String, pkgpath::String, logpath::String, logname::String)
+    Pkg.add(path = pkgpath)
     try
-        TestReports.test(name; logfilename = logfile)
+        TestReports.test(name; logfilepath = logpath,logfilename = logname)
     catch
     end
     Pkg.rm(name)
@@ -38,8 +38,8 @@ end
 Parse a given nightly run XML log for test failures 
 and return information about that run
 """
-function process_nightlylog(logfile::String, latest::String)::NightlyInfo
-    failures = process_log(logfile)
+function process_nightlylog(logfile::String, latest::String,pkgname::String)::NightlyInfo
+    failures = process_log(logfile,pkgname)
     return NightlyInfo(
         latest,
         string(VERSION),
@@ -86,11 +86,10 @@ function nightly(configfile::String = "DownstreamTester.json")
         if !haskey(nightlyconfig, "reporting")
             nightlyconfig["reporting"] = split(url, "github.com/")[end]
         end
-        xmlfile = logpath * name * "_nightly_" * latest * "_v" * ver * ".xml"
-        nightly_testrun(name, nightlyconfig["path"], xmlfile)
-        info = process_nightlylog(xmlfile, latest)
+        xmlfilename = name * "_nightly_" * latest * "_v" * ver * ".xml"
+        nightly_testrun(name, nightlyconfig["path"],logpath, xmlfilename)
+        info = process_nightlylog(logpath*xmlfilename, latest,name)
         diff = diff_failures(prev.failures, info.failures)
-
         issues = parse_issues(logpath * name * "_nightly_issues.json")
         
         if !isempty(diff.new)

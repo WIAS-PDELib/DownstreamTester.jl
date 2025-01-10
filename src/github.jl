@@ -34,6 +34,30 @@ function describe_testcase(testcase::FailureInfo)::String
 end
 
 
+function describe_testsuites(failures::Set{FailureInfo})::String
+    # Sort failures by testsuite
+    d = Dict{String,Set{FailureInfo}}()
+    for failure in failures
+        suite = failure.suite
+        if haskey(d,suite)
+            push!(d[suite],failure)
+        else
+            merge!(d,Dict(suite=>Set([failure])))
+        end
+    end
+    description = ""
+    for suite in eachindex(d)
+        description *= "* Testsuite: `"*suite*"`\n"
+        for case in d[suite]
+            description *= "  * `"*case.casename*"`\n"
+            description *= "    failed at `"*case.location*"`\n"
+            description *= "    Evaluated: `"*case.message*"`\n\n"
+        end
+    end
+    
+    return description
+end
+
 """
     mark_as_fixed!(issues::Set{IssueInfo},fixed::Set{FailureInfo},preamble::String)
 
@@ -73,9 +97,7 @@ function open_issue(repo::String, title::String, preamble::String, labels::Vecto
     body *= preamble
 
     body *= "\nFailing tests: \n\n"
-    for failure in new
-        body *= describe_testcase(failure)
-    end
+    body *= describe_testsuites(new)
     body *= "\n"
     body *= "Notes:\n\n"
     body *= "* This issue will automatically be closed once the failing tests"
@@ -104,9 +126,7 @@ Comment on given issue with the information about passing tests.
 function update_issue(issueinfo::IssueInfo, fixes::Set{FailureInfo}, preamble::String, allfixed::Bool = false)
     body = "[automated DownstreamTester.jl update]\n\n"
     body *= preamble
-    for passing in fixes
-        body *= describe_testcase(passing)
-    end
+    body *= describe_testsuites(fixes)
     if allfixed
         body *= "\n All errors are now fixed, closing.\n"
     end

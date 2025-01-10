@@ -4,6 +4,7 @@ struct FailureInfo
     suite::String
     casename::String
     message::String
+    location::String
 end
 
 """
@@ -22,6 +23,7 @@ function Base.:(==)(left::FailureInfo, right::FailureInfo)
     if left.message != right.message
         return false
     end
+    #don't test location as it might change between revisions
     return true
 end
 
@@ -86,7 +88,8 @@ function parse(
         failure = FailureInfo(
             entry["suite"],
             entry["casename"],
-            entry["message"]
+            entry["message"],
+            entry["location"]
         )
         push!(failures, failure)
     end
@@ -124,7 +127,8 @@ function parse_failures(content)
         failure = FailureInfo(
             failuredict["suite"],
             failuredict["casename"],
-            failuredict["message"]
+            failuredict["message"],
+            failuredict["location"]
         )
         push!(failures, failure)
     end

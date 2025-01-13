@@ -24,7 +24,7 @@ and write the results into the XML logfile
 function nightly_testrun(name::String, pkgpath::String, logpath::String, logname::String)
     Pkg.add(path = pkgpath)
     try
-        TestReports.test(name; logfilepath = logpath,logfilename = logname)
+        TestReports.test(name; logfilepath = logpath, logfilename = logname)
     catch
     end
     Pkg.rm(name)
@@ -38,8 +38,8 @@ end
 Parse a given nightly run XML log for test failures 
 and return information about that run
 """
-function process_nightlylog(logfile::String, latest::String,pkgname::String)::NightlyInfo
-    failures = process_log(logfile,pkgname)
+function process_nightlylog(logfile::String, latest::String, pkgname::String)::NightlyInfo
+    failures = process_log(logfile, pkgname)
     return NightlyInfo(
         latest,
         string(VERSION),
@@ -87,11 +87,11 @@ function nightly(configfile::String = "DownstreamTester.json")
             nightlyconfig["reporting"] = split(url, "github.com/")[end]
         end
         xmlfilename = name * "_nightly_" * latest * "_v" * ver * ".xml"
-        nightly_testrun(name, nightlyconfig["path"],logpath, xmlfilename)
-        info = process_nightlylog(logpath*xmlfilename, latest,name)
+        nightly_testrun(name, nightlyconfig["path"], logpath, xmlfilename)
+        info = process_nightlylog(logpath * xmlfilename, latest, name)
         diff = diff_failures(prev.failures, info.failures)
         issues = parse_issues(logpath * name * "_nightly_issues.json")
-        
+
         if !isempty(diff.new)
             @info "New failures since last run, opening issue."
 
@@ -108,7 +108,7 @@ function nightly(configfile::String = "DownstreamTester.json")
             issueinfo = open_issue(nightlyconfig["reporting"], title, preamble, ["nightly"], diff.new)
             push!(issues, issueinfo)
         end
-        
+
         if !isempty(diff.fixed)
             @info "Fixed failures since last run, " *
                 "check can  if issue can be closed."
@@ -119,7 +119,7 @@ function nightly(configfile::String = "DownstreamTester.json")
             preamble *= " with Julia v" * string(VERSION) * " :tada:\n\n"
             mark_as_fixed!(issues, diff.fixed, preamble)
         end
-        
+
         #Overwrite issue file
         issuefilename = name * "_nightly_issues.json"
         issuefile = open(logpath * issuefilename, "w")

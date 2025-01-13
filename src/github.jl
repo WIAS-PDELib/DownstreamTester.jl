@@ -36,25 +36,25 @@ end
 
 function describe_testsuites(failures::Set{FailureInfo})::String
     # Sort failures by testsuite
-    d = Dict{String,Set{FailureInfo}}()
+    d = Dict{String, Set{FailureInfo}}()
     for failure in failures
         suite = failure.suite
-        if haskey(d,suite)
-            push!(d[suite],failure)
+        if haskey(d, suite)
+            push!(d[suite], failure)
         else
-            merge!(d,Dict(suite=>Set([failure])))
+            merge!(d, Dict(suite => Set([failure])))
         end
     end
     description = ""
     for suite in eachindex(d)
-        description *= "* Testsuite: `"*suite*"`\n"
+        description *= "* Testsuite: `" * suite * "`\n"
         for case in d[suite]
-            description *= "  * `"*case.casename*"`\n"
-            description *= "    failed at `"*case.location*"`\n"
-            description *= "    Evaluated: `"*case.message*"`\n\n"
+            description *= "  * `" * case.casename * "`\n"
+            description *= "    failed at `" * case.location * "`\n"
+            description *= "    Evaluated: `" * case.message * "`\n\n"
         end
     end
-    
+
     return description
 end
 

@@ -1,11 +1,14 @@
 # SPDX-License-Identifier: MIT
 
+"""
+    DownstreamTester
+"""
 module DownstreamTester
-using Pkg
-using TestReports
-using JSON
-using Dates
-using GitHub
+using Pkg: Pkg
+using TestReports: TestReports
+using JSON: JSON
+using Dates: Dates, Date
+using GitHub: GitHub, labels, repo
 
 
 """

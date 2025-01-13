@@ -18,6 +18,8 @@ end
 
 end
 
-@testset "UndocumentedNames" begin
-    @test isempty(Docs.undocumented_names(DownstreamTester))
+if isdefined(Docs, :undocumented_names) # >=1.11
+    @testset "UndocumentedNames" begin
+        @test isempty(Docs.undocumented_names(DownstreamTester))
+    end
 end

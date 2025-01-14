@@ -7,7 +7,7 @@ module DownstreamTester
 using Pkg: Pkg
 using TestReports: TestReports
 using JSON: JSON
-using Dates: Dates, Date
+using Dates: Dates, Date, today
 using GitHub: GitHub, labels, repo
 
 

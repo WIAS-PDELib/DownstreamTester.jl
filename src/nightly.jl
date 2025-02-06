@@ -60,10 +60,10 @@ If new failing tests are found it will open an issue on the package repository.
 If tests are passing it will report on the related issue and
 close it if all reported tests therein pass.
 """
-function nightly(configfile::String = "DownstreamTester.json")
+function nightly(configfile::String = "DownstreamTester.json"; do_clone=true)
     config = JSON.parsefile(configfile)
     nightlyconfig = config["repo"]
-    process_git!(nightlyconfig)
+    process_git!(nightlyconfig,do_clone)
     latest = string(nightlyconfig["githashes"][1])
     ver = string(VERSION)
     name = nightlyconfig["name"]

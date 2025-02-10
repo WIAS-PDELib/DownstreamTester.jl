@@ -81,6 +81,7 @@ function nightly(configfile::String = "DownstreamTester.json"; do_clone=true)
         @info "Tests for this configuration already run yesterday, done."
         info = prev
     else
+        issues = parse_issues(logpath * name * "_nightly_issues.json")
         # If reporting is not set, DownstreamTester will try to open an issue in
         # the source repo of the package to test
         if !haskey(nightlyconfig, "reporting")
@@ -88,9 +89,34 @@ function nightly(configfile::String = "DownstreamTester.json"; do_clone=true)
         end
         xmlfilename = name * "_nightly_" * latest * "_v" * ver * ".xml"
         nightly_testrun(name, nightlyconfig["path"], logpath, xmlfilename)
+        if !isfile(logpath*xmlfilename)
+            @info "XML file not found, tests did not run correctly. Opening issue."
+
+            new = Set{FailureInfo}()
+            failure = FailureInfo(
+                "Pkg",
+                "test()",
+                "XML file not found, check output of GitHub action",
+                "test/runtest.jl:1"
+            )
+            push!(new,failure)
+
+            title = "DownstreamTester nightly not running " * latest[1:6]
+            preamble = "Dear all,\n\n"
+            preamble *= "this is DownstreamTester.jl reporting a failing *nightly* test run.\n\n"
+            preamble *= "No XML output found, please check output of GitHub action for more details."
+
+            issueinfo = open_issue(nightlyconfig["reporting"],title,preamble,["nightly"],new)
+            push!(issues,issueinfo)
+            issuefilename = name * "_nightly_issues.json"
+            issuefile = open(logpath * issuefilename,"w")
+            JSON.print(issuefile,issues,2)
+            close(issuefile)
+            git_add_file(issuefilename,logpath)
+        end
+
         info = process_nightlylog(logpath * xmlfilename, latest, name)
         diff = diff_failures(prev.failures, info.failures)
-        issues = parse_issues(logpath * name * "_nightly_issues.json")
 
         if !isempty(diff.new)
             @info "New failures since last run, opening issue."

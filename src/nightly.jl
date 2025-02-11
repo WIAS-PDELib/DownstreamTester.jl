@@ -49,7 +49,7 @@ end
 
 
 """
-    nightly(configfile::String="DownstreamTester.json")
+    nightly(configfile::String = "DownstreamTester.json"; do_clone::Bool = true, nightlylabels::Vector{String} = ["nightly"])
 
 Perform a nightly test on the Julia Package given in the config file.
 This function is aimed to be run daily in a scheduled GitHub action 
@@ -60,7 +60,7 @@ If new failing tests are found it will open an issue on the package repository.
 If tests are passing it will report on the related issue and
 close it if all reported tests therein pass.
 """
-function nightly(configfile::String = "DownstreamTester.json"; do_clone = true)
+function nightly(configfile::String = "DownstreamTester.json"; do_clone::Bool = true, nightlylabels::Vector{String} = ["nightly"])
     config = JSON.parsefile(configfile)
     nightlyconfig = config["repo"]
     process_git!(nightlyconfig, do_clone)
@@ -104,7 +104,7 @@ function nightly(configfile::String = "DownstreamTester.json"; do_clone = true)
             if failure in prev.failures
                 @info "Problem already known."
             else
-                push!(failure,info.failures)
+                push!(failure, info.failures)
                 @info "Opening issue."
 
                 title = "DownstreamTester nightly not running " * latest[1:6]
@@ -112,7 +112,7 @@ function nightly(configfile::String = "DownstreamTester.json"; do_clone = true)
                 preamble *= "this is DownstreamTester.jl reporting a failing *nightly* test run.\n\n"
                 preamble *= "No XML output found, please check output of GitHub action for more details."
 
-                issueinfo = open_issue(nightlyconfig["reporting"], title, preamble, ["nightly"], new)
+                issueinfo = open_issue(nightlyconfig["reporting"], title, preamble, nightlylabels, new)
                 push!(issues, issueinfo)
                 issuefilename = name * "_nightly_issues.json"
                 issuefile = open(logpath * issuefilename, "w")

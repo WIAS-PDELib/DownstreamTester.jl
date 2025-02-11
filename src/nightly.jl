@@ -85,7 +85,7 @@ function nightly(configfile::String = "DownstreamTester.json"; do_clone = true)
         # If reporting is not set, DownstreamTester will try to open an issue in
         # the source repo of the package to test
         if !haskey(nightlyconfig, "reporting")
-            nightlyconfig["reporting"] = split(url, "github.com/")[end]
+            nightlyconfig["reporting"] = string(split(url, "github.com/")[end])
         end
         xmlfilename = name * "_nightly_" * latest * "_v" * ver * ".xml"
         nightly_testrun(name, nightlyconfig["path"], logpath, xmlfilename)

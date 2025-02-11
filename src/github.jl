@@ -109,6 +109,8 @@ function open_issue(repo::String, title::String, preamble::String, labels::Vecto
         "body" => body,
         "labels" => labels
     )
+    infostr = "Opening issue on repository " * repo
+    @info infostr
     issue = GitHub.create_issue(
         repo
         ;

@@ -99,11 +99,13 @@ function nightly(configfile::String = "DownstreamTester.json"; do_clone = true)
                 "XML file not found, check output of GitHub action",
                 ".github/workflows/downstreamtester.yml"
             )
-            if new in prev.failures
+            push!(new, failure)
+            info = prev
+            if failure in prev.failures
                 @info "Problem already known."
             else
                 @info "Opening issue."
-                push!(new, failure)
+                push!(new,info.failures)
 
                 title = "DownstreamTester nightly not running " * latest[1:6]
                 preamble = "Dear all,\n\n"

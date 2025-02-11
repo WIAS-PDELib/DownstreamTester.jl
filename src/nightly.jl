@@ -94,10 +94,10 @@ function nightly(configfile::String = "DownstreamTester.json"; do_clone=true)
 
             new = Set{FailureInfo}()
             failure = FailureInfo(
-                "Pkg",
-                "test()",
+                "DownstreamTester",
+                "nightly()",
                 "XML file not found, check output of GitHub action",
-                "test/runtest.jl:1"
+                ".github/workflows/downstreamtester.yml"
             )
             push!(new,failure)
 

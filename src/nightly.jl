@@ -104,8 +104,8 @@ function nightly(configfile::String = "DownstreamTester.json"; do_clone = true)
             if failure in prev.failures
                 @info "Problem already known."
             else
+                push!(failure,info.failures)
                 @info "Opening issue."
-                push!(new,info.failures)
 
                 title = "DownstreamTester nightly not running " * latest[1:6]
                 preamble = "Dear all,\n\n"
